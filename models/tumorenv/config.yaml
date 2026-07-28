@@ -1,0 +1,1069 @@
+simulation_metadata:
+    num_episodes: 1
+    num_steps_per_episode: 2
+    num_substeps_per_step: 8 # change this for the number of substeps
+    N: 100                  # height of grid
+    M: 100                  # width of grid
+    device: "cpu"
+    num_cells: 10000        # file_size of the grid
+    TUpprol: 0.5055         # Proliferation probability tumor cells
+    TUpmig: 0.35            # Migration probability tumor cells
+    TUpdeath: 0.12          # Death probability tumor cells
+    TUprolmax: 10           # Proliferation capacity tumor cells
+    TUps: 0.7               # Symmetric division probability
+    TUintmax: 2             # Tumour cell interaction capacity
+    IMkmax: 5               # Killing capacity immune cells
+    IMprolmax: 10           # Proliferation capacity immune cells
+    IMintmax: 40            # Immune cell interaction capacity
+    IMpprol: 0.049          # Proliferation prob. immune cells
+    IMpmig: 0.8             # Migration probability immune cells
+    IMpkill: 0.3            # Killing probability immune cells
+    IMpdeath: 0.0147        # Death probability immune cells
+    IMrwalk: 0.8            # Random influence on immune walk
+    IMspeed: 97             # Speed of immune cell movement
+    IMinfluxProb: 0.2       # Influx probability immune cells
+    IMinflRate: 1           # Influx rate immune cells
+    engagementDuration: 48  # Duration of immune cell engagement in tumor cell killing
+    tumor_agent_id_file: "data/p10/pre_10percent/tumor_id.csv"
+    immune_agent_id_file: "data/p10/pre_10percent/immune_id.csv"
+    Tum_dense: 'data/p10/pre_10percent/Tum_dense_2.csv'
+    Tum_proliferation_status: 'data/p10/pre_10percent/Tum_prolif.csv'
+    CD8_dense: 'data/p10/pre_10percent/CD8_dense.csv'
+    CD8_proliferation_status: 'data/p10/pre_10percent/CD8_prolif.csv'
+    CD8_non_proliferation_status: 'data/p10/pre_10percent/CD8_nonprolif.csv'
+    immunological_map: 'data/p10/pre_10percent/immunology_map.csv'
+
+state:
+    environment:
+        TUpprol:
+            name: "Proliferation probability tumor cells"
+            learnable: False
+            shape:
+                - 1
+            initialization_function: null
+            value: ${simulation_metadata.TUpprol}
+            dtype: "float"
+        
+        TUpmig:
+            name: "Migration probability tumor cells"
+            shape:
+                - 1
+            learnable: False
+            initialization_function: null
+            value: ${simulation_metadata.TUpmig}
+            dtype: "float"
+
+        TUpdeath:
+            name: "Death probability tumor cells"
+            shape:
+                - 1
+            learnable: False
+            initialization_function: null
+            value: ${simulation_metadata.TUpdeath}
+            dtype: "float"
+                
+        TUps:
+            name: "Symmetric division probability"
+            shape:
+                - 1
+            learnable: False
+            initialization_function: null
+            value: ${simulation_metadata.TUps}
+            dtype: "float"
+
+        IMpprol:
+            name: "Proliferation prob. immune cells"
+            shape:
+                - 1
+            learnable: False
+            initialization_function: null
+            value: ${simulation_metadata.IMpprol}
+            dtype: "float"
+        
+        IMpmig:
+            name: "Migration probability immune cells"
+            shape:
+                - 1
+            learnable: False
+            initialization_function: null
+            value: ${simulation_metadata.IMpmig}
+            dtype: "float"
+                    
+        IMpkill:
+            name: "Killing probability immune cells"
+            shape:
+                - 1
+            learnable: False
+            initialization_function: null
+            value: ${simulation_metadata.IMpkill}
+            dtype: "float"
+                    
+        IMpdeath:
+            name: "Death probability immune cells"
+            shape:
+                - 1
+            learnable: False
+            initialization_function: null
+            value: ${simulation_metadata.IMpdeath}
+            dtype: "float"
+
+        IMinfluxProb:
+            name: "Death probability immune cells"
+            shape:
+                - 1
+            learnable: False
+            initialization_function: null
+            value: ${simulation_metadata.IMinfluxProb}
+            dtype: "float"
+        
+        IMinflRate:
+            name: "Death probability immune cells"
+            shape:
+                - 1
+            learnable: False
+            initialization_function: null
+            value: ${simulation_metadata.IMinflRate}
+            dtype: "float"
+
+        IMrwalk:
+            name: "Random influence on immune walk"
+            shape:
+                - 1
+            learnable: False
+            initialization_function: null
+            value: ${simulation_metadata.IMrwalk}
+            dtype: "float"
+
+        IMspeed:
+            name: "Speed of immune cell movement"
+            shape:
+                - 1
+            learnable: False
+            initialization_function: null
+            value: ${simulation_metadata.IMspeed}
+            dtype: "float"
+
+        combined_cell_matrix:
+            name: "Combined Cell Matrix"
+            shape:
+                - ${simulation_metadata.N}
+                - ${simulation_metadata.M}
+            learnable: False
+            initialization_function:
+                generator: "initialize_combined_cell_matrix"
+                arguments:
+                    tumor_file_path: 
+                        name: "Filepath for Tumor Cell Ids"
+                        learnable: False
+                        shape: null
+                        initialization_function: null
+                        value: ${simulation_metadata.Tum_dense}
+                    immune_file_path: 
+                        name: "Filepath for Immune Cell Ids"
+                        learnable: False
+                        shape: null
+                        initialization_function: null
+                        value: ${simulation_metadata.CD8_dense}
+            dtype: "int"
+
+        immunological_map:
+            name: "Immunological map"
+            shape:
+                - ${simulation_metadata.N}
+                - ${simulation_metadata.M}
+            learnable: False
+            initialization_function:
+                generator: "initialize_location_matrix"
+                arguments:
+                    file_path: 
+                        name: "Filepath for Immunological map"
+                        learnable: False
+                        shape: null
+                        initialization_function: null
+                        value: ${simulation_metadata.immunological_map}
+            dtype: "int"
+
+    agents:
+        tumorcells:
+            number: ${simulation_metadata.num_cells}
+            properties:
+                id:
+                    name: "Agent Id"
+                    shape:
+                        - ${state.agents.tumorcells.number}
+                        - 1
+                    learnable: False
+                    initialization_function:
+                        generator: "read_from_file"
+                        arguments:
+                            file_path: 
+                                name: "Filepath for Tumor Cell Ids"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.tumor_agent_id_file}
+                    dtype: "int"
+
+                Tum_dense:
+                    name: "Tumour cell density"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function:
+                        generator: "initialize_location_matrix" 
+                        arguments:
+                            file_path: 
+                                name: "Filepath for Tumor Cell Ids"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.Tum_dense}
+                    dtype: "int"
+
+                Tum_proliferation_status:
+                    name: "Proliferation status of tumor cells"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function:
+                        generator: "initialize_parameter" #Shape is (10000, 100, 100, value)
+                        arguments:
+                            values: 
+                                name: "Values for Proliferation status of tumor cells"
+                                learnable: False
+                                shape: 
+                                    - 1
+                                initialization_function: null
+                                value: 0
+                                dtype: "int"
+                            file_path:
+                                name: "Filepath for Tumor Density"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.Tum_dense}
+                    value: 0
+                    dtype: "int"
+
+                TUintmax:
+                    name: "Tumour cell interaction capacity"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function: 
+                        generator: "initialize_parameter" # Shape is (10000, 100, 100, value)
+                        arguments:
+                            values: 
+                                name: "Values for Tumour cell interaction capacity"
+                                learnable: False
+                                shape: 
+                                    - 1
+                                initialization_function: null
+                                value: 2
+                                dtype: "float"
+                            file_path:
+                                name: "Filepath for Tumour Cell Ids"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.Tum_dense}
+                    dtype: "float"
+
+                Tum_engagement_status:
+                    name: "Tumour cell engagement status"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function: 
+                        generator: "initialize_parameter" #Shape is (10000, 100, 100, value)
+                        arguments:
+                            values: 
+                                name: "Values for Tumour cell engagement status"
+                                learnable: False
+                                shape: 
+                                    - 1
+                                initialization_function: null
+                                value: 0
+                                dtype: "int"
+                            file_path:
+                                name: "Filepath for Tumour Cell Ids"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.Tum_dense}
+                    value: 0
+                    dtype: "int"
+
+                TUprolmax:
+                    name: "Proliferation capacity tumor cells"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function: 
+                        generator: "initialize_parameter" #Shape is (10000, 100, 100, value)
+                        arguments:
+                            values: 
+                                name: "Values for Proliferation capacity tumor cells"
+                                learnable: False
+                                shape: 
+                                    - 1
+                                initialization_function: null
+                                value: 10
+                                dtype: "float"
+                            file_path:
+                                name: "Filepath for Tumour Cell Ids"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.Tum_dense}
+                    value: 10
+                    dtype: "float"
+
+                # The location matrix of the agents is of shape (num_agents * height * width)
+                TU_location_matrix:
+                    name: "Location matrix of tumor cells"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function: 
+                        generator: "initialize_location_matrix"
+                        arguments:
+                            file_path: 
+                                name: "Filepath for Tumor Cell Ids"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.Tum_dense}
+                    dtype: "int"                    
+
+        immunecells:
+            number: ${simulation_metadata.num_cells}
+            properties:
+                id:
+                    name: "Agent Id"
+                    shape:
+                        - ${state.agents.immunecells.number}
+                        - 1
+                    learnable: False
+                    initialization_function:
+                        generator: "read_from_file"
+                        arguments:
+                            file_path: 
+                                name: "Filepath for disease stage"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.immune_agent_id_file}
+                    dtype: "int"
+
+                CD8_dense:
+                    name: "CD8+ T cell density"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function:
+                        generator: "initialize_location_matrix"
+                        arguments:
+                            file_path: 
+                                name: "Filepath for CD8 cell density"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.CD8_dense}
+                    dtype: "int"
+
+                CD8_proliferation_status:
+                    name: "Proliferation status of CD8+ T cells"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function: 
+                        generator: "initialize_parameter" #Shape is (10000, 100, 100, value)
+                        arguments:
+                            values: 
+                                name: "Values for Proliferation status of CD8+ T cells"
+                                learnable: False
+                                shape: 
+                                    - 1
+                                initialization_function: null
+                                value: 0
+                                dtype: "int"
+                            file_path:
+                                name: "Filepath for CD8 Density"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.CD8_dense}
+                    dtype: "int"
+
+                CD8_non_proliferation_status:
+                    name: "Non-proliferation status of CD8+ T cells"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function:
+                        generator: "initialize_parameter" # Shape is (10000, 100, 100, value)
+                        arguments:
+                            values: 
+                                name: "Values for Non-proliferation status of CD8+ T cells"
+                                learnable: False
+                                shape: 
+                                    - 1
+                                initialization_function: null
+                                value: 0
+                                dtype: "int"
+                            file_path:
+                                name: "Filepath for CD8 Dense"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.CD8_dense}
+                    dtype: "int"
+
+                CD8_engagement_status:
+                    name: "CD8+ T cell engagement status"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function:
+                        generator: "initialize_parameter" # Shape is (10000, 100, 100, value)
+                        arguments:
+                            values: 
+                                name: "Values for CD8+ T cell engagement status"
+                                learnable: False
+                                shape: 
+                                    - 1
+                                initialization_function: null
+                                value: 0
+                                dtype: "int"
+                            file_path:
+                                name: "Filepath for CD8 density"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.CD8_dense}
+                    value: 0
+                    dtype: "int"
+
+                IMprolmax:
+                    name: "Proliferation capacity immune cells"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function: 
+                        generator: "initialize_parameter" #Shape is (10000, 100, 100, value)
+                        arguments:
+                            values: 
+                                name: "Values for Proliferation capacity immune cells"
+                                learnable: False
+                                shape: 
+                                    - 1
+                                initialization_function: null
+                                value: 10
+                                dtype: "float"
+                            file_path:
+                                name: "Filepath for CD8 density"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.CD8_dense}
+                    value: 10
+                    dtype: "float"
+
+                IMintmax:
+                    name: "Immune cell interaction capacity"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function: 
+                        generator: "initialize_parameter" # Shape is (10000, 100, 100, value)
+                        arguments:
+                            values: 
+                                name: "Values for Immune cell interaction capacity"
+                                learnable: False
+                                shape: 
+                                    - 1
+                                initialization_function: null
+                                value: 40
+                                dtype: "float"
+                            file_path:
+                                name: "Filepath for CD8 density"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.CD8_dense}
+                    value: 40
+                    dtype: "float"
+
+                IMkmax:
+                    name: "Killing capacity immune cells"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function:
+                        generator: "initialize_parameter" # Shape is (10000, 100, 100, value)
+                        arguments:
+                            values: 
+                                name: "Values for Killing capacity immune cells"
+                                learnable: False
+                                shape: 
+                                    - 1
+                                initialization_function: null
+                                value: 5
+                                dtype: "float"
+                            file_path:
+                                name: "Filepath for CD8 density"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.CD8_dense}
+                    value: 5
+                    dtype: "float"
+
+                engagementDuration:
+                    name: "Duration of immune cell engagement in tumor cell killing"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function: 
+                        generator: "initialize_parameter" # Shape is (10000, 100, 100, value)
+                        arguments:
+                            values: 
+                                name: "Values for Duration of immune cell engagement in tumor cell killing"
+                                learnable: False
+                                shape: 
+                                    - 1
+                                initialization_function: null
+                                value: ${simulation_metadata.engagementDuration}
+                                dtype: "int"
+                            file_path:
+                                name: "Filepath for CD8 density"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.CD8_dense}
+                    dtype: "int"
+
+                IM_location_matrix:
+                    name: "Location matrix of immune cells"
+                    shape:
+                        - ${simulation_metadata.N}
+                        - ${simulation_metadata.M}
+                    learnable: False
+                    initialization_function: 
+                        generator: "initialize_location_matrix"
+                        arguments:
+                            file_path: 
+                                name: "Filepath for CD8 cell density"
+                                learnable: False
+                                shape: null
+                                initialization_function: null
+                                value: ${simulation_metadata.CD8_dense}
+                    dtype: "int"
+
+    objects: null
+
+    network:
+        agent_agent:
+            bioelectric_network:
+                type: "grid"
+                arguments:
+                    shape:
+                        - ${simulation_metadata.N} # 100
+                        # - ${simulation_metadata.M} # 100
+        agent_object: null
+        object_object: null
+
+substeps: 
+    "0":
+        name: "tumor_cell_proliferation"
+        description: "proliferate tumor cells"
+        active_agents:
+            - "tumorcells"
+        observation:
+            tumorcells: 
+                get_from_state:
+                    generator: "GetFromState"
+                    arguments: null
+                    input_variables:
+                        Tum_dense: 'agents/tumorcells/Tum_dense'
+                        TUpprol: 'environment/TUpprol'
+                        TUpmig: 'environment/TUpmig'
+                        TUpdeath: 'environment/TUpdeath'
+                        immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                        tumor_location_matrix: 'agents/tumorcells/TU_location_matrix'
+                    output_variables:
+                        - Tum_dense
+                        - TUpprol
+                        - TUpmig
+                        - TUpdeath
+                        - location_matrix
+                observe_neighborhood:
+                    generator: "ObserveNeighborhood"
+                    arguments:
+                        neighborhood:
+                            name: "Neighborhood Scope"
+                            shape:
+                                - 1
+                            learnable: False
+                            initialization_function: null
+                            value: 1
+                            dtype: "int"
+                    input_variables:
+                        immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                        tumor_location_matrix: 'agents/tumorcells/TU_location_matrix'
+                        Tum_dense: 'agents/tumorcells/Tum_dense'
+                    output_variables:
+                        - new_neighborhood       
+        policy:
+            tumorcells: 
+                ProliferationDecision:
+                    generator: "ProliferationDecision"
+                    arguments: null
+                    input_variables: # from the observation
+                        TUpprol: 'environment/TUpprol'
+                        TUpmig: "environment/TUpmig"
+                        TUpdeath: "environment/TUpdeath"
+                        new_neighborhood: "new_neighborhood"
+                        initial_neighborhood: 'agents/tumorcells/tumor_location_matrix'
+                    output_variables:
+                        - prolif_action
+
+        transition:
+            ProliferateTUCell:
+                generator: "ProliferateTUCell"
+                arguments: null
+                input_variables:
+                    TUprolmax: 'agents/tumorcells/TUprolmax'
+                    Tum_proliferation_status: 'agents/tumorcells/Tum_proliferation_status'
+                    Tum_engagement_status: 'agents/tumorcells/Tum_engagement_status'
+                    TUintmax: 'agents/tumorcells/TUintmax'
+                    TUps: 'environment/TUps'
+                    location_matrix: 'agents/tumorcells/TU_location_matrix'
+                    new_neighborhood: "new_neighborhood"
+                    prolif_action: "prolif_action"
+                output_variables:
+                    - location_matrix
+                    - TUprolmax
+                    - Tum_proliferation_status
+                    - Tum_engagement_status
+                    - TUintmax
+        reward: null
+
+    "1":
+        name: "tumor_cell_migration"
+        description: "migrate tumor cells"
+        active_agents:
+            - "tumorcells"
+        observation:
+            tumorcells: 
+                get_from_state:
+                    generator: "GetFromState"
+                    arguments: null
+                    input_variables:
+                        Tum_dense: 'agents/tumorcells/Tum_dense'
+                        immuno_map: 'environment/immunological_map'
+                        location_matrix: 'agents/tumorcells/TU_location_matrix'
+                        immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                        TUpmig: 'environment/TUpmig'
+                        CD8_dense: 'agents/immunecells/CD8_dense'
+                    output_variables:
+                        - Tum_dense
+                        - TUpmig
+                        - immuno_map
+                        - CD8_dense
+
+                observe_far_neighborhood:
+                    generator: "ObserveFarNeighborhood"
+                    arguments:
+                        neighborhood:
+                            name: "Neighborhood Scope"
+                            shape:
+                                - 1
+                            learnable: False
+                            initialization_function: null
+                            value: 2
+                            dtype: "int"
+                    input_variables:
+                        location_matrix: 'agents/tumorcells/TU_location_matrix'
+                        immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                        Tum_dense: 'agents/tumorcells/Tum_dense'
+                        CD8_dense: 'agents/immunecells/CD8_dense'
+                        immuno_map: 'environment/immunological_map'
+                    output_variables:
+                        - new_neighborhood
+        policy: 
+            tumorcells: 
+                MigrationTUDecision:
+                    generator: "MigrationTUDecision"
+                    arguments: null
+                    input_variables: # from the observation
+                        TUpmig: 'environment/TUpmig'
+                        TUpprol: 'environment/TUpprol'
+                        TUpdeath: 'environment/TUpdeath'
+                        new_neighborhood: "new_neighborhood"
+                        initial_neighborhood: 'agents/tumorcells/location_matrix'
+                    output_variables:
+                        - migrate_action
+        transition: 
+            MigrateTUCell:
+                generator: "MigrateTUCell"
+                arguments: null
+                input_variables:
+                    location_matrix: 'agents/tumorcells/TU_location_matrix'
+                    TUintmax: 'agents/tumorcells/TUintmax'
+                    TUprolmax: 'agents/tumorcells/TUprolmax'
+                    migrate_action: "migrate_action"
+                output_variables:
+                    - location_matrix
+                    - TUintmax
+                    - TUprolmax
+        reward: null
+
+    "2":
+        name: "immune_cell_proliferation"
+        description: "proliferate immune cells"
+        active_agents:
+            - "immunecells"
+        observation:
+            immunecells:
+                get_from_state:
+                    generator: "GetFromState"
+                    arguments: null
+                    input_variables:
+                        IMpprol: 'environment/IMpprol'
+                        IMpdeath: 'environment/IMpdeath'
+                        IMpmig: 'environment/IMpmig'
+                        CD8_dense: 'agents/immunecells/CD8_dense'
+                        immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                        tumor_location_matrix: 'agents/tumorcells/TU_location_matrix'
+                    output_variables:
+                        - IMpprol
+                        - IMpdeath
+                        - IMpmig
+                        - CD8_dense
+                        - immune_location_matrix
+                ObserveIMpNeighborhood:
+                    generator: "ObserveIMpNeighborhood"
+                    arguments:
+                        neighborhood:
+                            name: "Neighborhood Scope"
+                            shape:
+                                - 1
+                            learnable: False
+                            initialization_function: null
+                            value: 1
+                            dtype: "int"
+                    input_variables:
+                        immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                        tumor_location_matrix: 'agents/tumorcells/TU_location_matrix'
+                    output_variables:
+                        - new_neighborhood 
+        policy:
+            immunecells: 
+                ProliferationIMDecision:
+                    generator: "ProliferationIMDecision"
+                    arguments: null
+                    input_variables: # from the observation
+                        IMpprol: 'environment/IMpprol'
+                        IMpdeath: 'environment/IMpdeath'
+                        IMpmig: 'environment/IMpmig'
+                        new_neighborhood: "new_neighborhood"
+                        initial_neighborhood: 'agents/immunecells/immune_location_matrix'
+                    output_variables:
+                        - prolif_action
+        transition:
+            ProliferateIMCell:
+                generator: "ProliferateIMCell"
+                arguments: null
+                input_variables:
+                    IMprolmax: 'agents/immunecells/IMprolmax'
+                    IMintmax: 'agents/immunecells/IMintmax'
+                    CD8_proliferation_status: 'agents/immunecells/CD8_proliferation_status'
+                    CD8_non_proliferation_status: 'agents/immunecells/CD8_non_proliferation_status'
+                    CD8_engagement_status: 'agents/immunecells/CD8_engagement_status'
+                    immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                output_variables:
+                    - immune_location_matrix
+                    - IMprolmax
+                    - CD8_proliferation_status
+                    - CD8_non_proliferation_status
+                    - CD8_engagement_status
+                    - IMintmax
+        reward: null
+
+    "3":
+        name: "immune_cell_migration"
+        description: "migrate immune cells"
+        active_agents:
+            - "immunecells"
+        observation:
+            immunecells: 
+                get_from_state:
+                    generator: "GetFromState"
+                    arguments: null
+                    input_variables:
+                        IMpprol: 'environment/IMpprol'
+                        IMpmig: 'environment/IMpmig'
+                        IMpdeath: 'environment/IMpdeath'
+                        Tum_dense: 'agents/tumorcells/Tum_dense'
+                        immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                        tumor_location_matrix: 'agents/tumorcells/TU_location_matrix'
+                    output_variables:
+                        - IMpprol
+                        - IMpmig
+                        - IMpdeath
+                        - Tum_dense
+
+                IM_ObserveFarNeighborhood:
+                    generator: "ObserveFarNeighborhood"
+                    arguments:
+                        neighborhood:
+                            name: "Neighborhood Scope"
+                            shape:
+                                - 1
+                            learnable: False
+                            initialization_function: null
+                            value: 2
+                            dtype: "int"
+                    input_variables:
+                        Tum_dense: 'agents/tumorcells/Tum_dense'
+                        immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                        tumor_location_matrix: 'agents/tumorcells/TU_location_matrix'
+                    output_variables:
+                        - new_neighborhood
+        policy: 
+            immunecells: 
+                MigrationIMDecision:
+                    generator: "MigrationIMDecision"
+                    arguments: null
+                    input_variables: # from the observation
+                        IMpprol: 'environment/IMpprol'
+                        IMpmig: 'environment/IMpmig'
+                        IMpdeath: 'environment/IMpdeath'
+                        new_neighborhood: "new_neighborhood"
+                        initial_neighborhood: 'agents/immunecells/location_matrix'
+                    output_variables:
+                        - migrate_action
+        transition:
+            MigrateIMCell:
+                generator: "MigrateIMCell"
+                arguments: null
+                input_variables:
+                    immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                    IMintmax: 'agents/immunecells/IMintmax'
+                    IMprolmax: 'agents/immunecells/IMprolmax'
+                    IMkmax: 'agents/immunecells/IMkmax'
+                    engagementDuration: 'agents/immunecells/engagementDuration'
+                output_variables:
+                    - immune_location_matrix
+                    - IMprolmax
+                    - IMintmax
+                    - IMkmax
+                    - engagementDuration
+        reward: null
+
+    "4":
+        name: "tumor_immune_cell_interaction"
+        description: "Simulate combat between tumor and immune cells"
+        active_agents:
+            - "immunecells"
+        observation:
+            immunecells:
+                get_from_state:
+                    generator: "GetFromState"
+                    arguments: null
+                    input_variables:
+                        combined_cell_matrix: 'environment/combined_cell_matrix'
+                        engagementDuration: 'agents/immunecells/engagementDuration'
+                        IMkmax: 'agents/immunecells/IMkmax'
+                        IMpkill: 'environment/IMpkill'
+                        CD8_engagement_status: 'agents/immunecells/CD8_engagement_status'
+                        TUintmax: 'agents/tumorcells/TUintmax'
+                        Tum_engagement_status: 'agents/tumorcells/Tum_engagement_status'
+                        location_matrix: 'agents/tumorcells/TU_location_matrix'
+                        immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                    output_variables:
+                        - combined_cell_matrix
+                        - engagementDuration
+                        - IMkmax
+                        - CD8_engagement_status
+                        - TUintmax
+                        - Tum_engagement_status
+                        - location_matrix
+                        - immune_location_matrix
+                ObserveIMkNeighborhood:
+                    generator: "ObserveIMkNeighborhood"
+                    arguments: null
+                    input_variables:
+                        location_matrix: 'agents/tumorcells/TU_location_matrix'
+                        immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                        CD8_engagement_status: 'agents/immunecells/CD8_engagement_status'
+                        IMprolmax: 'agents/immunecells/IMprolmax'
+                        IMkmax: 'agents/immunecells/IMkmax'
+                    output_variables:
+                        - eligible_immune_cells
+                        - neighborhood_tumor_matrices
+                        - IMkmax
+                        - CD8_engagement_status
+        policy:
+            immunecells:
+                CombatDecision:
+                    generator: "CombatDecision"
+                    arguments: null
+                    input_variables: # from the observation
+                        eligible_immune_cells: 'eligible_immune_cells'
+                        neighborhood_tumor_matrices: 'neighborhood_tumor_matrices'
+                        IMpkill: 'environment/IMpkill'
+                        location_matrix: 'agents/tumorcells/TU_location_matrix'
+                    output_variables:
+                        - selected_immune_cells
+        transition:
+            Combat:
+                generator: "Combat"
+                arguments: null
+                input_variables:
+                    combined_cell_matrix: 'environment/combined_cell_matrix'
+                    engagementDuration: 'agents/immunecells/engagementDuration'
+                    IMkmax: 'agents/immunecells/IMkmax'
+                    TUintmax: 'agents/tumorcells/TUintmax'
+                    CD8_engagement_status: 'agents/immunecells/CD8_engagement_status'
+                    Tum_engagement_status: 'agents/tumorcells/Tum_engagement_status'
+                    location_matrix: 'agents/tumorcells/TU_location_matrix'
+                    immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                output_variables:
+                    - location_matrix
+                    - immune_location_matrix
+                    - IMkmax
+                    - TUintmax
+                    - CD8_engagement_status
+                    - Tum_engagement_status
+        reward: null 
+
+    "5":
+        name: "tumor_cell_death"
+        description: "tumor cells die"
+        active_agents:
+            - "tumorcells"
+        observation:
+            tumorcells: null
+        policy:
+            tumorcells: null
+        transition:
+            KillTUCell:
+                generator: "KillTUCell"
+                arguments: null
+                input_variables:
+                    TUpdeath: 'environment/TUpdeath'
+                    TUpprol: 'environment/TUpprol'
+                    TUpmig: 'environment/TUpmig'
+                    TUprolmax: 'agents/tumorcells/TUprolmax'
+                    Tum_proliferation_status: 'agents/tumorcells/Tum_proliferation_status'
+                    TUintmax: 'agents/tumorcells/TUintmax'
+                    Tum_engagement_status: 'agents/tumorcells/Tum_engagement_status'
+                    location_matrix: 'agents/tumorcells/TU_location_matrix'
+                output_variables:
+                    - location_matrix
+                    - TUintmax
+                    - TUprolmax
+                    - Tum_proliferation_status
+                    - Tum_engagement_status
+        reward: null
+
+    "6":
+        name: "immune_cell_death"
+        description: "immune cells die"
+        active_agents:
+            - "immunecells"
+        observation:
+            immunecells: null
+        policy:
+            immunecells: null
+        transition:
+            KillIMCell:
+                generator: "KillIMCell"
+                arguments: null
+                input_variables:
+                    IMpdeath: 'environment/IMpdeath'
+                    IMpmig: 'environment/IMpmig'
+                    IMpprol: 'environment/IMpprol'
+                    IMkmax: 'agents/immunecells/IMkmax'
+                    IMprolmax: 'agents/immunecells/IMprolmax'
+                    CD8_proliferation_status: 'agents/immunecells/CD8_proliferation_status'
+                    CD8_non_proliferation_status: 'agents/immunecells/CD8_non_proliferation_status'
+                    CD8_engagement_status: 'agents/immunecells/CD8_engagement_status'
+                    immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                output_variables:
+                    - immune_location_matrix
+                    - IMkmax
+                    - IMprolmax
+                    - CD8_proliferation_status
+                    - CD8_non_proliferation_status
+                    - CD8_engagement_status
+                    
+        reward: null
+
+    "7":
+        name: "immune_cell_influx"
+        description: "influx of new immune cells into the tumor microenvironment"
+        active_agents:
+            - "immunecells"
+        observation:
+            immunecells:
+                ObserveInfluxCandidates:
+                    generator: "ObserveInfluxCandidates"
+                    arguments: null
+                    input_variables:
+                        immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                        tumor_location_matrix: 'agents/tumorcells/TU_location_matrix'
+                    output_variables:
+                        - dead_mask
+                        - candidate_map
+        policy:
+            immunecells:
+                InfluxIMDecision:
+                    generator: "InfluxIMDecision"
+                    arguments: null
+                    input_variables:
+                        IMinfluxProb: 'environment/IMinfluxProb'
+                        dead_mask: "dead_mask"
+                        candidate_map: "candidate_map"
+                    output_variables:
+                        - influx_targets
+        transition:
+            InfluxIMCell:
+                generator: "InfluxIMCell"
+                arguments: null
+                input_variables:
+                    immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                    IMprolmax: 'agents/immunecells/IMprolmax'
+                    IMkmax: 'agents/immunecells/IMkmax'
+                    IMintmax: 'agents/immunecells/IMintmax'
+                    engagementDuration: 'agents/immunecells/engagementDuration'
+                    CD8_proliferation_status: 'agents/immunecells/CD8_proliferation_status'
+                    CD8_non_proliferation_status: 'agents/immunecells/CD8_non_proliferation_status'
+                    CD8_engagement_status: 'agents/immunecells/CD8_engagement_status'
+                output_variables:
+                    - immune_location_matrix
+                    - IMprolmax
+                    - IMkmax
+                    - IMintmax
+                    - engagementDuration
+                    - CD8_proliferation_status
+                    - CD8_non_proliferation_status
+                    - CD8_engagement_status
+        reward: null   

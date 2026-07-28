@@ -1,0 +1,25 @@
+# OS files
+.DS_Store
+desktop.ini
+Thumbs.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Large data files (optional - keep if needed)
+*.npy
+*.mat
+*.xlsx
+
+# Visualizations (generated)
+visualizations/*.png
+visualizations/*.gif
+
+# Environment
+agent-torch-env/
