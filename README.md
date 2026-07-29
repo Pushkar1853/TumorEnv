@@ -5,8 +5,8 @@
 </h1>
 
 <p align="center">
-  <strong>differentiable agent-based modeling of tumor-immune dynamics</strong><br>
-  calibrating clinical simulations directly from biopsy images
+  <strong>differentiable tumor–immune simulations</strong><br>
+  calibrated directly from biopsy images
 </p>
 
 <!-- <p align="center">
@@ -23,23 +23,61 @@
 
 ## Overview
 
-TumorEnv is a differentiable agent-based model (ABM) built on [AgentTorch](https://agenttorch.github.io/AgentTorch/) that simulates the complex interactions between tumor cells and cytotoxic CD8+ T cells within the tumor microenvironment. By calibrating simulations directly from biopsy images, TumorEnv enables gradient-based optimization of clinical ABMs — minimizing the number of biopsy samples needed while maximizing predictive accuracy under the Spatial Agreement Measure (SAM) metric.
+TumorEnv is an open-source framework for differentiable simulation and calibration of tumor–immune interactions from histopathology images. It combines biologically grounded agent-based dynamics with gradient-based optimization, enabling model parameters to be learned directly from biopsy observations. Built on top of the [AgentTorch](https://agenttorch.github.io/AgentTorch/) simulation framework, TumorEnv introduces oncology-specific cell dynamics, image-to-simulation preprocessing, differentiable calibration objectives, and visualization tools for studying tumor evolution and immune response.
 
 Cancer progression and immune response emerge from millions of individual cellular decisions — proliferation, migration, combat, and death — unfolding across spatial tissue architectures. While traditional ABMs capture these dynamics, they lack differentiability, making calibration a black-box optimization problem. TumorEnv bridges this gap by making the entire simulation pipeline differentiable, allowing gradient-based calibration of model parameters directly from histopathology images.
 
-TumorEnv has four core design principles:
+## Highlights
 
-- **Differentiability**: The entire simulation pipeline is differentiable through stochastic dynamics and conditional interventions, enabling gradient-based optimization of model parameters directly from biopsy data.
-- **Clinical Calibration**: Model parameters are calibrated against real histopathology images using the Spatial Agreement Measure (SAM), minimizing the number of biopsy samples required for accurate predictions.
-- **Multi-Modal Pipeline**: Biopsy images are converted to spatial cell location matrices via the DeepliIF model, which are then fed into the ABM as initial conditions — creating an end-to-end pipeline from tissue images to simulated dynamics.
-- **Spatial Fidelity**: The model operates on a 2D spatial grid (100×100), capturing the spatial organization of tumor and immune cells through proliferation, migration, and interaction dynamics with local neighborhood constraints.
+- End-to-end pipeline from biopsy images to calibrated simulations
+- Differentiable optimization through stochastic agent-based dynamics
+- Gradient-based estimation of tumor–immune interaction parameters
+- Spatial evaluation using the Spatial Agreement Measure (SAM)
+- Modular framework for computational oncology research
+
+## Simulation Overview
+
+<p align="center">
+  <img src="assets/tumor_immune_dynamics.gif" width="700" alt="TumorEnv Simulation">
+</p>
+
+Each simulation step executes eight biologically motivated substeps, allowing tumor and immune populations to proliferate, migrate, interact, and evolve over time.
 
 ## Pipeline
 
 The TumorEnv pipeline transforms histopathology images into calibrated simulations through a multi-stage process:
 
+<!-- <p align="center">
+  <!-- <strong>Biopsy ImagesDeepliIF → Location Matrices → Agent-Based Model → Calibrated Dynamics</strong> -->
+  <!-- <strong>Histopathology Images  → DeepliIF Cell Detection → Spatial Cell Maps → TumorEnv Simulation → Differentiable Calibration → Predicted Tumor Evolution</strong> 
+  <strong>
+    Histopathology Images
+          ↓
+ DeepliIF Cell Detection
+          ↓
+   Spatial Cell Maps
+          ↓
+  TumorEnv Simulation
+          ↓
+Differentiable Calibration
+          ↓
+Predicted Tumor Evolution
+  </strong>
+</p> -->
 <p align="center">
-  <strong>Biopsy Images → DeepliIF → Location Matrices → Agent-Based Model → Calibrated Dynamics</strong>
+  <strong>
+    Histopathology Images <br>
+    ↓ <br>
+    DeepliIF Cell Detection <br>
+    ↓ <br>
+    Spatial Cell Maps <br>
+    ↓ <br>
+    TumorEnv Simulation <br>
+    ↓ <br>
+    Differentiable Calibration <br>
+    ↓ <br>
+    Predicted Tumor Evolution
+  </strong>
 </p>
 
 ### Image Preprocessing
@@ -63,7 +101,7 @@ The agent-based model executes a sequence of biologically-motivated substeps in 
 
 ### Calibration
 
-The model supports two calibration strategies:
+To estimate biologically meaningful parameters from tissue observations, TumorEnv provides two calibration approaches:
 
 - **Gradient-Based Calibration**: Uses differentiable soft population accumulators (`soft_tumor_delta`, `soft_immune_delta`) to backpropagate through the simulation and optimize 7 of 9 parameters via gradient descent.
 - **CMA-ES Calibration**: Black-box evolutionary optimization for all parameters, serving as a baseline comparison.
@@ -73,11 +111,18 @@ Both methods evaluate against post-treatment ground truth data using a composite
 - **RDF Loss**: Radial distribution function discrepancy (spatial structure)
 - **Clustering Loss**: Local clustering coefficient differences
 
+## Key Features
+
+- **Differentiability**: The entire simulation pipeline is differentiable through stochastic dynamics and conditional interventions, enabling gradient-based optimization of model parameters directly from biopsy data.
+- **Clinical Calibration**: Model parameters are calibrated against real histopathology images using the Spatial Agreement Measure (SAM), minimizing the number of biopsy samples required for accurate predictions.
+- **Multi-Modal Pipeline**: Biopsy images are converted to spatial cell location matrices via the DeepliIF model, which are then fed into the ABM as initial conditions — creating an end-to-end pipeline from tissue images to simulated dynamics.
+- **Spatial Fidelity**: The model operates on a 2D spatial grid (100×100), capturing the spatial organization of tumor and immune cells through proliferation, migration, and interaction dynamics with local neighborhood constraints.
+
 ## Installation
 
 ### Prerequisites
 
-TumorEnv requires Python ≥3.9 and PyTorch ≥2.0.0. If you have not installed Python 3.9, please do so first from [python.org/downloads](https://www.python.org/downloads/).
+TumorEnv requires Python ≥3.9 and PyTorch ≥2.0.0. If you have not installed Python 3.9, please do so first from [python.org/downloads](https://www.python.org/downloads/). TumorEnv depends on AgentTorch for its differentiable simulation engine.
 
 ### Setup
 
@@ -125,7 +170,7 @@ python visualize_trajectory.py --config config.yaml --output_dir visualizations
 
 ## Getting Started
 
-### Executing a Simulation Programmatically
+### Running Your First Simulation
 
 ```py
 from simulator import TU_IM_Runner, TUIM_registry
@@ -182,7 +227,7 @@ calibrated_params, loss_breakdown, loss_history = main()
 
 ## License
 
-<!-- Copyright (c) 2026 Pushkar Ambastha & Contributors -->
+Copyright (c) 2026 Pushkar Ambastha & Contributors
 
 This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). This means:
 - You can freely use, modify, and distribute this software
@@ -221,7 +266,7 @@ If you use TumorEnv in your research, please cite:
 
 ```bibtex
 @software{tumorenv,
-  author = {Ambastha, Pushkar and {AgentTorch Contributors}},
+  author = {Ambastha, Pushkar},
   title = {TumorEnv: Differentiable Agent-Based Modeling of Tumor-Immune Dynamics},
   year = {2026},
   url = {https://github.com/AgentTorch/TumorEnv}
@@ -230,5 +275,5 @@ If you use TumorEnv in your research, please cite:
 
 ## Acknowledgments
 
-- Built on [AgentTorch](https://agenttorch.github.io/AgentTorch/) — an open-source platform for large-scale differentiable agent-based simulations
-- Cell detection and spatial mapping powered by [DeepliIF](https://deepliif.org/)
+- TumorEnv is built on top of AgentTorch, an open-source framework for differentiable large-scale agent-based simulations. We thank the [AgentTorch](https://agenttorch.github.io/AgentTorch/) developers for making the underlying simulation infrastructure publicly available.
+- Cell detection and spatial mapping are powered by [DeepliIF](https://deepliif.org/)
