@@ -38,7 +38,7 @@ Cancer progression and immune response emerge from millions of individual cellul
 ## Simulation Overview
 
 <p align="center">
-  <img src="assets/tumor_immune_dynamics.gif" width="700" alt="TumorEnv Simulation">
+  <img src="models/tumorenv/visualizations/tumor_immune_dynamics.gif" width="400" alt="TumorEnv Simulation">
 </p>
 
 Each simulation step executes eight biologically motivated substeps, allowing tumor and immune populations to proliferate, migrate, interact, and evolve over time.
