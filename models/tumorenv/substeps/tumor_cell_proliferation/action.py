@@ -64,10 +64,12 @@ class ProliferationDecision(SubstepAction):
         logits = self._get_nature(TUpmig, TUpdeath, TUpprol).view(3, 1).expand(3, num_agents)
 
         gumbel_softmax_sample = F.gumbel_softmax(logits, tau=tau, dim=0, hard=True)  # [3, num_agents]
+        raw_weight = gumbel_softmax_sample[0].detach() + gumbel_softmax_sample[0] - gumbel_softmax_sample[0].detach()  # straight-through, keep grad
         new_weight = 0.7 * gumbel_softmax_sample[0]           # [num_agents]
         new_weight = new_weight.view(-1, 1, 1)                # broadcast over H, W
 
         prolif_action = (1 - new_weight) * initial_neighborhood + new_weight * new_neighborhood
 
         # print("tumor proliferation decision taken with probabilities!")
-        return {self.output_variables[0]: prolif_action}
+        return {self.output_variables[0]: prolif_action,
+                self.output_variables[1]: raw_weight}

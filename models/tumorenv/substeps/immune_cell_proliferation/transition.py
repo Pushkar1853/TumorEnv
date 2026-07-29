@@ -87,6 +87,8 @@ class ProliferateIMCell(SubstepTransition):
         CD8_non_proliferation_status = get_by_path(state, re.split("/", input_variables["CD8_non_proliferation_status"]))
         CD8_engagement_status = get_by_path(state, re.split("/", input_variables["CD8_engagement_status"]))
         prolif_action = action['immunecells']['prolif_action']
+        event_weight = action['immunecells']['raw_weight']
+        soft_immune_delta = get_by_path(state, re.split("/", input_variables["soft_immune_delta"]))
         IMMUNE_PROLIFERATION_CAPACITY = 10
         IMMUNE_INTERACTION_CAPACITY = 40
 
@@ -104,6 +106,8 @@ class ProliferateIMCell(SubstepTransition):
         dead_slot_ptr = 0
 
         claimed_map = (location_matrix.sum(dim=0) > 0).float()
+
+        fired_mask = torch.zeros(num_agents)
 
         for agent_idx in range(num_agents):
             if dead_slot_mask[agent_idx]:
@@ -145,7 +149,11 @@ class ProliferateIMCell(SubstepTransition):
             updated_CD8_non_proliferation_status[daughter_idx][new_y, new_x] = 1
             updated_CD8_engagement_status[daughter_idx] = torch.zeros(grid_height, grid_width)
 
+            fired_mask[agent_idx] = 1.0
             claimed_map[new_y, new_x] = 1
+
+        step_delta = (fired_mask.detach() * event_weight).sum()
+        updated_soft_immune_delta = soft_immune_delta + step_delta
 
         # self.plot_location_matrices(location_matrix, updated_location_matrix)
 
@@ -155,4 +163,5 @@ class ProliferateIMCell(SubstepTransition):
                 self.output_variables[2]: updated_CD8_proliferation_status,
                 self.output_variables[3]: updated_CD8_non_proliferation_status,
                 self.output_variables[4]: updated_CD8_engagement_status,
-                self.output_variables[5]: updated_IMintmax}
+                self.output_variables[5]: updated_IMintmax,
+                self.output_variables[6]: updated_soft_immune_delta}

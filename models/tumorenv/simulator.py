@@ -120,6 +120,7 @@ class TU_IM_Runner(Runner):
         self.initial_state = None
         self.final_state = None
         self.grid_trajectory = []  # CHANGED: lightweight replacement for state_trajectory
+        self._initial_fractions = (0.0, 0.0)
 
     @staticmethod
     def _state_to_grid(state, device='cpu'):
@@ -175,6 +176,22 @@ class TU_IM_Runner(Runner):
 
     def execute(self):
         self.forward()
+
+    def get_soft_population_fractions(self):
+        from AgentTorch.helpers import get_by_path
+        soft_tumor_delta = get_by_path(self.state, ["environment", "soft_tumor_delta"])
+        soft_immune_delta = get_by_path(self.state, ["environment", "soft_immune_delta"])
+        total_cells = self.config['simulation_metadata']['N'] * self.config['simulation_metadata']['M']
+        initial_t, initial_i = self._initial_fractions
+        return (initial_t + soft_tumor_delta / total_cells,
+                initial_i + soft_immune_delta / total_cells)
+
+    def reset(self):
+        self.init()
+        grid = self.get_current_state()
+        t = (grid == 1).float().mean().detach()
+        i = (grid == 2).float().mean().detach()
+        self._initial_fractions = (t, i)
 
     def get_current_state(self):
         return self._state_to_grid(self.state)
