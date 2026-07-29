@@ -83,6 +83,7 @@ class KillTUCell(SubstepTransition):
         Tum_proliferation_status = get_by_path(state, re.split("/", input_variables["Tum_proliferation_status"]))
         Tum_engagement_status = get_by_path(state, re.split("/", input_variables["Tum_engagement_status"]))
         location_matrix = get_by_path(state, re.split("/", input_variables["location_matrix"]))
+        soft_tumor_delta = get_by_path(state, re.split("/", input_variables["soft_tumor_delta"]))
         TUMOR_INTERACTION_CAPACITY = 2
         TUMOR_PROLIFERATION_CAPACITY = 10
 
@@ -123,16 +124,17 @@ class KillTUCell(SubstepTransition):
             new_TU_prolmax = TUprolmax * survives
             new_Tu_proliferation_status = torch.zeros(transition_matrix.shape)
             new_Tu_engagement_status = torch.zeros(transition_matrix.shape)
-            return new_matrix, new_TU_intmax, new_TU_prolmax, new_Tu_proliferation_status, new_Tu_engagement_status
+            return new_matrix, new_TU_intmax, new_TU_prolmax, new_Tu_proliferation_status, new_Tu_engagement_status, death_weight
 
         updated_agent_matrix = []
         updated_TUintmax = []
         updated_TUprolmax = []
         updated_Tum_proliferation_status = []
         updated_Tum_engagement_status = []
+        collected_death_weights = []
 
         for agent_idx in range(num_agents):
-            new_matrix, new_TUintmax, new_TUprolmax, new_Tum_prolif_status, new_Tum_engage_status = kill_cell(
+            new_matrix, new_TUintmax, new_TUprolmax, new_Tum_prolif_status, new_Tum_engage_status, death_weight = kill_cell(
                 location_matrix[agent_idx],
                 TUintmax[agent_idx],
                 TUprolmax[agent_idx])
@@ -141,6 +143,7 @@ class KillTUCell(SubstepTransition):
             updated_TUprolmax.append(new_TUprolmax)
             updated_Tum_proliferation_status.append(new_Tum_prolif_status)
             updated_Tum_engagement_status.append(new_Tum_engage_status)
+            collected_death_weights.append(death_weight)
 
         # Stack the tensors and ensure correct shape
         updated_agent_matrix = torch.stack(updated_agent_matrix)
@@ -155,6 +158,12 @@ class KillTUCell(SubstepTransition):
         updated_Tum_proliferation_status = updated_Tum_proliferation_status.view(-1, grid_height, grid_width)
         updated_Tum_engagement_status = updated_Tum_engagement_status.view(-1, grid_height, grid_width)
 
+        # CHANGED: differentiable shadow accumulator for death events
+        death_weights = torch.stack(collected_death_weights)
+        died_mask = (updated_agent_matrix.sum(dim=(1, 2)) == 0) & (location_matrix.sum(dim=(1, 2)) > 0)
+        step_delta = -(died_mask.float().detach() * death_weights).sum()
+        updated_soft_tumor_delta = soft_tumor_delta + step_delta
+
         # self.plot_location_matrices(location_matrix, updated_agent_matrix)
 
         # print("tumor cell death transition complete!")
@@ -162,4 +171,5 @@ class KillTUCell(SubstepTransition):
                 self.output_variables[1]: updated_TUintmax,
                 self.output_variables[2]: updated_TUprolmax,
                 self.output_variables[3]: updated_Tum_proliferation_status,
-                self.output_variables[4]: updated_Tum_engagement_status}
+                self.output_variables[4]: updated_Tum_engagement_status,
+                self.output_variables[5]: updated_soft_tumor_delta}

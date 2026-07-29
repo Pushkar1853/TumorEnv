@@ -92,6 +92,8 @@ class ProliferateTUCell(SubstepTransition):
         TUintmax = get_by_path(state, re.split("/", self.input_variables["TUintmax"]))
         TUps = get_by_path(state, re.split("/", self.input_variables["TUps"]))
         prolif_action = action['tumorcells']['prolif_action']
+        event_weight = action['tumorcells']['raw_weight']
+        soft_tumor_delta = get_by_path(state, re.split("/", self.input_variables["soft_tumor_delta"]))
         TUMOR_PROLIFERATION_CAPACITY = 10
         TUMOR_INTERACTION_CAPACITY = 2
 
@@ -115,6 +117,9 @@ class ProliferateTUCell(SubstepTransition):
         # CHANGED: cells already occupied by ANY live agent this step, so two
         # daughters (or a daughter and an unrelated cell) can't land on the same pixel.
         claimed_map = (location_matrix.sum(dim=0) > 0).float()
+
+        # CHANGED: differentiable shadow accumulator — track which parents actually fired
+        fired_mask = torch.zeros(num_agents)
 
         for agent_idx in range(num_agents):
             if dead_slot_mask[agent_idx]:
@@ -159,7 +164,14 @@ class ProliferateTUCell(SubstepTransition):
             updated_Tum_proliferation_status[daughter_idx][new_y, new_x] = 1
             updated_Tum_engagement_status[daughter_idx] = torch.zeros(grid_height, grid_width)
 
+            fired_mask[agent_idx] = 1.0
             claimed_map[new_y, new_x] = 1
+
+        # CHANGED: differentiable delta — fired_mask is a constant (built from hard
+        # torch.where/multinomial decisions, detached implicitly), event_weight
+        # carries the theta-dependence via Gumbel-softmax. Gradient flows here.
+        step_delta = (fired_mask.detach() * event_weight).sum()
+        updated_soft_tumor_delta = soft_tumor_delta + step_delta
 
         # self.plot_location_matrices(location_matrix, updated_location_matrix)
 
@@ -168,4 +180,5 @@ class ProliferateTUCell(SubstepTransition):
                 self.output_variables[1]: updated_TUprolmax,
                 self.output_variables[2]: updated_Tum_engagement_status,
                 self.output_variables[3]: updated_Tum_proliferation_status,
-                self.output_variables[4]: updated_TUintmax}
+                self.output_variables[4]: updated_TUintmax,
+                self.output_variables[5]: updated_soft_tumor_delta}

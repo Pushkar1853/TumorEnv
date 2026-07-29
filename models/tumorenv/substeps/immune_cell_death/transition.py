@@ -89,6 +89,7 @@ class KillIMCell(SubstepTransition):
         CD8_non_proliferation_status = get_by_path(state, re.split("/", input_variables["CD8_non_proliferation_status"]))
         CD8_engagement_status = get_by_path(state, re.split("/", input_variables["CD8_engagement_status"]))
         location_matrix = get_by_path(state, re.split("/", input_variables["immune_location_matrix"]))
+        soft_immune_delta = get_by_path(state, re.split("/", input_variables["soft_immune_delta"]))
         IMMUNE_PROLIFERATION_CAPACITY = 10
         IMMUNE_INTERACTION_CAPACITY = 40
         IMMUNE_KILLING_CAPACITY = 5
@@ -137,7 +138,7 @@ class KillIMCell(SubstepTransition):
             new_CD8_non_prol_status = torch.zeros(transition_matrix.shape)
             new_CD8_eng_status = torch.zeros(transition_matrix.shape)
 
-            return new_matrix, new_IM_kmax, new_IM_prolmax, new_CD8_prol_status, new_CD8_non_prol_status, new_CD8_eng_status
+            return new_matrix, new_IM_kmax, new_IM_prolmax, new_CD8_prol_status, new_CD8_non_prol_status, new_CD8_eng_status, death_weight
 
         updated_location_matrix = []
         updated_IMprolmax = []
@@ -145,10 +146,11 @@ class KillIMCell(SubstepTransition):
         updated_CD8_proliferation_status = []
         updated_CD8_non_proliferation_status = []
         updated_CD8_engagement_status = []
+        collected_death_weights = []
 
         # kill_x, kill_y: immune_cells_id
         for agent_idx in range(num_agents):
-            new_matrix, new_IMkmax, new_IMprolmax, new_CD8_proliferation_status, new_CD8_non_proliferation_status, new_CD8_engagement_status = kill_cell(
+            new_matrix, new_IMkmax, new_IMprolmax, new_CD8_proliferation_status, new_CD8_non_proliferation_status, new_CD8_engagement_status, death_weight = kill_cell(
                 location_matrix[agent_idx], 
                 IMkmax[agent_idx], 
                 IMprolmax[agent_idx])
@@ -159,6 +161,7 @@ class KillIMCell(SubstepTransition):
             updated_CD8_proliferation_status.append(new_CD8_proliferation_status)
             updated_CD8_non_proliferation_status.append(new_CD8_non_proliferation_status)
             updated_CD8_engagement_status.append(new_CD8_engagement_status)
+            collected_death_weights.append(death_weight)
 
         updated_location_matrix = torch.stack(updated_location_matrix)
         updated_IMprolmax = torch.stack(updated_IMprolmax)
@@ -174,6 +177,12 @@ class KillIMCell(SubstepTransition):
         updated_CD8_non_proliferation_status = updated_CD8_non_proliferation_status.view(-1, grid_height, grid_width)
         updated_CD8_engagement_status = updated_CD8_engagement_status.view(-1, grid_height, grid_width)
 
+        # CHANGED: differentiable shadow accumulator for immune death events
+        death_weights = torch.stack(collected_death_weights)
+        died_mask = (updated_location_matrix.sum(dim=(1, 2)) == 0) & (location_matrix.sum(dim=(1, 2)) > 0)
+        step_delta = -(died_mask.float().detach() * death_weights).sum()
+        updated_soft_immune_delta = soft_immune_delta + step_delta
+
         # self.plot_location_matrices(location_matrix, updated_location_matrix)
 
         # print("immune cell death transition complete!") 
@@ -182,4 +191,5 @@ class KillIMCell(SubstepTransition):
                 self.output_variables[2]: updated_IMprolmax,
                 self.output_variables[3]: updated_CD8_proliferation_status,
                 self.output_variables[4]: updated_CD8_non_proliferation_status,
-                self.output_variables[5]: updated_CD8_engagement_status}
+                self.output_variables[5]: updated_CD8_engagement_status,
+                self.output_variables[6]: updated_soft_immune_delta}

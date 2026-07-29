@@ -24,6 +24,8 @@ class InfluxIMCell(SubstepTransition):
         CD8_proliferation_status = get_by_path(state, re.split("/", input_variables["CD8_proliferation_status"]))
         CD8_non_proliferation_status = get_by_path(state, re.split("/", input_variables["CD8_non_proliferation_status"]))
         CD8_engagement_status = get_by_path(state, re.split("/", input_variables["CD8_engagement_status"]))
+        soft_immune_delta = get_by_path(state, re.split("/", input_variables["soft_immune_delta"]))
+        IMinfluxProb = get_by_path(state, re.split("/", input_variables["IMinfluxProb"]))
 
         influx_targets = action['immunecells']['influx_targets']
 
@@ -43,6 +45,13 @@ class InfluxIMCell(SubstepTransition):
         updated_CD8_non_proliferation_status = torch.where(newly_influxed, influx_targets, CD8_non_proliferation_status)
         updated_CD8_engagement_status = torch.where(newly_influxed, torch.zeros_like(CD8_engagement_status), CD8_engagement_status)
 
+        # CHANGED: closed-form expected contribution — differentiable in IMinfluxProb directly
+        # dead_mask computed from state: agent slots with no live cell
+        dead_mask = (immune_location_matrix.sum(dim=(1, 2)) == 0)
+        num_dead_slots = dead_mask.sum().float()
+        step_delta = num_dead_slots.detach() * IMinfluxProb
+        updated_soft_immune_delta = soft_immune_delta + step_delta
+
         # print("immune cell influx transition complete! (%d new cells entered)" % int(newly_influxed.sum().item()))
         return {self.output_variables[0]: updated_location_matrix,
                 self.output_variables[1]: updated_IMprolmax,
@@ -51,4 +60,5 @@ class InfluxIMCell(SubstepTransition):
                 self.output_variables[4]: updated_engagementDuration,
                 self.output_variables[5]: updated_CD8_proliferation_status,
                 self.output_variables[6]: updated_CD8_non_proliferation_status,
-                self.output_variables[7]: updated_CD8_engagement_status}
+                self.output_variables[7]: updated_CD8_engagement_status,
+                self.output_variables[8]: updated_soft_immune_delta}

@@ -125,6 +125,24 @@ state:
             value: ${simulation_metadata.IMinflRate}
             dtype: "float"
 
+        soft_tumor_delta:
+            name: "Differentiable accumulated tumor population delta"
+            shape:
+                - 1
+            learnable: False
+            initialization_function: null
+            value: 0.0
+            dtype: "float"
+
+        soft_immune_delta:
+            name: "Differentiable accumulated immune population delta"
+            shape:
+                - 1
+            learnable: False
+            initialization_function: null
+            value: 0.0
+            dtype: "float"
+
         IMrwalk:
             name: "Random influence on immune walk"
             shape:
@@ -642,12 +660,14 @@ substeps:
                         initial_neighborhood: 'agents/tumorcells/tumor_location_matrix'
                     output_variables:
                         - prolif_action
+                        - raw_weight
 
         transition:
             ProliferateTUCell:
                 generator: "ProliferateTUCell"
                 arguments: null
                 input_variables:
+                    soft_tumor_delta: 'environment/soft_tumor_delta'
                     TUprolmax: 'agents/tumorcells/TUprolmax'
                     Tum_proliferation_status: 'agents/tumorcells/Tum_proliferation_status'
                     Tum_engagement_status: 'agents/tumorcells/Tum_engagement_status'
@@ -656,12 +676,14 @@ substeps:
                     location_matrix: 'agents/tumorcells/TU_location_matrix'
                     new_neighborhood: "new_neighborhood"
                     prolif_action: "prolif_action"
+                    event_weight: "raw_weight"
                 output_variables:
                     - location_matrix
                     - TUprolmax
                     - Tum_proliferation_status
                     - Tum_engagement_status
                     - TUintmax
+                    - soft_tumor_delta
         reward: null
 
     "1":
@@ -786,17 +808,20 @@ substeps:
                         initial_neighborhood: 'agents/immunecells/immune_location_matrix'
                     output_variables:
                         - prolif_action
+                        - raw_weight
         transition:
             ProliferateIMCell:
                 generator: "ProliferateIMCell"
                 arguments: null
                 input_variables:
+                    soft_immune_delta: 'environment/soft_immune_delta'
                     IMprolmax: 'agents/immunecells/IMprolmax'
                     IMintmax: 'agents/immunecells/IMintmax'
                     CD8_proliferation_status: 'agents/immunecells/CD8_proliferation_status'
                     CD8_non_proliferation_status: 'agents/immunecells/CD8_non_proliferation_status'
                     CD8_engagement_status: 'agents/immunecells/CD8_engagement_status'
                     immune_location_matrix: 'agents/immunecells/IM_location_matrix'
+                    event_weight: "raw_weight"
                 output_variables:
                     - immune_location_matrix
                     - IMprolmax
@@ -804,6 +829,7 @@ substeps:
                     - CD8_non_proliferation_status
                     - CD8_engagement_status
                     - IMintmax
+                    - soft_immune_delta
         reward: null
 
     "3":
@@ -968,6 +994,7 @@ substeps:
                 generator: "KillTUCell"
                 arguments: null
                 input_variables:
+                    soft_tumor_delta: 'environment/soft_tumor_delta'
                     TUpdeath: 'environment/TUpdeath'
                     TUpprol: 'environment/TUpprol'
                     TUpmig: 'environment/TUpmig'
@@ -982,6 +1009,7 @@ substeps:
                     - TUprolmax
                     - Tum_proliferation_status
                     - Tum_engagement_status
+                    - soft_tumor_delta
         reward: null
 
     "6":
@@ -998,6 +1026,7 @@ substeps:
                 generator: "KillIMCell"
                 arguments: null
                 input_variables:
+                    soft_immune_delta: 'environment/soft_immune_delta'
                     IMpdeath: 'environment/IMpdeath'
                     IMpmig: 'environment/IMpmig'
                     IMpprol: 'environment/IMpprol'
@@ -1014,6 +1043,7 @@ substeps:
                     - CD8_proliferation_status
                     - CD8_non_proliferation_status
                     - CD8_engagement_status
+                    - soft_immune_delta
                     
         reward: null
 
@@ -1049,6 +1079,8 @@ substeps:
                 generator: "InfluxIMCell"
                 arguments: null
                 input_variables:
+                    soft_immune_delta: 'environment/soft_immune_delta'
+                    IMinfluxProb: 'environment/IMinfluxProb'
                     immune_location_matrix: 'agents/immunecells/IM_location_matrix'
                     IMprolmax: 'agents/immunecells/IMprolmax'
                     IMkmax: 'agents/immunecells/IMkmax'
@@ -1066,4 +1098,5 @@ substeps:
                     - CD8_proliferation_status
                     - CD8_non_proliferation_status
                     - CD8_engagement_status
-        reward: null   
+                    - soft_immune_delta
+        reward: null
