@@ -182,7 +182,7 @@ calibrated_params, loss_breakdown, loss_history = main()
 
 ## License
 
-Copyright (c) 2024 Pushkar Ambastha & Contributors
+<!-- Copyright (c) 2026 Pushkar Ambastha & Contributors -->
 
 This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). This means:
 - You can freely use, modify, and distribute this software
@@ -223,7 +223,7 @@ If you use TumorEnv in your research, please cite:
 @software{tumorenv,
   author = {Ambastha, Pushkar and {AgentTorch Contributors}},
   title = {TumorEnv: Differentiable Agent-Based Modeling of Tumor-Immune Dynamics},
-  year = {2024},
+  year = {2026},
   url = {https://github.com/AgentTorch/TumorEnv}
 }
 ```
