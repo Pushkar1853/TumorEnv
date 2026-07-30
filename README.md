@@ -23,7 +23,9 @@
 <img src="https://img.shields.io/badge/Built%20with-AgentTorch-2E77D0" alt="AgentTorch"/>
 </a>
 
+<a href="https://docs.pytorch.org/docs/2.13/index.html">
 <img src="https://img.shields.io/badge/Framework-PyTorch-EE4C2C"/>
+</a>
 
 <img src="https://img.shields.io/badge/License-AGPL--3.0-green"/>
 
