@@ -35,6 +35,11 @@ Cancer progression and immune response emerge from millions of individual cellul
 - Spatial evaluation using the Spatial Agreement Measure (SAM)
 - Modular framework for computational oncology research
 
+<p align="center">
+  <img src="models/tumorenv/visualizations/fig1-new.png" alt="TumorEnv pipeline">
+</p>
+
+
 ## Simulation Overview
 
 <p align="center">
