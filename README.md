@@ -249,7 +249,7 @@ calibrated_params, loss_breakdown, loss_history = main()
 
 ## License
 
-Copyright (c) 2026 Pushkar Ambastha & Contributors
+<!-- Copyright (c) 2026 Pushkar Ambastha & Contributors -->
 
 This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). This means:
 - You can freely use, modify, and distribute this software
@@ -262,13 +262,13 @@ For inquiries about using this software in a proprietary product, please reach o
 
 ## Guides and Tutorials
 
-### Understanding the Framework
+<!-- ### Understanding the Framework
 
 A detailed explanation of the AgentTorch framework architecture can be found in the [AgentTorch documentation](https://agenttorch.github.io/AgentTorch/).
 
 ### Creating a Model
 
-Tutorials on building agent-based models with AgentTorch are available in the [AgentTorch tutorials](https://agenttorch.github.io/AgentTorch/tutorials/config_api/).
+Tutorials on building agent-based models with AgentTorch are available in the [AgentTorch tutorials](https://agenttorch.github.io/AgentTorch/tutorials/config_api/). -->
 
 ### Contributing to TumorEnv
 
