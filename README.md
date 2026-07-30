@@ -9,21 +9,29 @@
   calibrated directly from biopsy images
 </p>
 
-<!-- <p align="center">
-  <a href="https://agenttorch.github.io/AgentTorch/" target="_blank">
-    <img src="https://img.shields.io/badge/Powered%20by-AgentTorch-blue" alt="AgentTorch" />
-  </a>
-  <a href="https://github.com/AgentTorch/TumorEnv" target="_blank">
-    <img src="https://img.shields.io/badge/Paper-SAM%20Metric-green" alt="SAM Metric" />
-  </a>
-  <a href="https://deepliif.org/" target="_blank">
-    <img src="https://img.shields.io/badge/Preprocessing-DeepliIF-orange" alt="DeepliIF" />
-  </a>
-</p> -->
+<p align="center">
+
+<a href="report/TumorEnv_final.pdf">
+<img src="https://img.shields.io/badge/Technical%20Report-PDF-red" alt="Technical Report"/>
+</a>
+
+<a href="https://drive.google.com/file/d/1sG-oktAtHnYwM8RHNbDDzBO7Dz77L6XD/view?usp=sharing">
+<img src="https://img.shields.io/badge/PDF-Google%20Drive-4285F4" alt="Google Drive"/>
+</a>
+
+<a href="https://agenttorch.github.io/AgentTorch/">
+<img src="https://img.shields.io/badge/Built%20with-AgentTorch-2E77D0" alt="AgentTorch"/>
+</a>
+
+<img src="https://img.shields.io/badge/Framework-PyTorch-EE4C2C"/>
+
+<img src="https://img.shields.io/badge/License-AGPL--3.0-green"/>
+
+</p>
 
 ## Overview
 
-TumorEnv is an open-source framework for differentiable simulation and calibration of tumor–immune interactions from histopathology images. It combines biologically grounded agent-based dynamics with gradient-based optimization, enabling model parameters to be learned directly from biopsy observations. Built on top of the [AgentTorch](https://agenttorch.github.io/AgentTorch/) simulation framework, TumorEnv introduces oncology-specific cell dynamics, image-to-simulation preprocessing, differentiable calibration objectives, and visualization tools for studying tumor evolution and immune response.
+TumorEnv is an open-source framework for differentiable simulation and calibration of tumor–immune interactions from histopathology images. It combines biologically grounded agent-based dynamics with gradient-based optimization, enabling model parameters to be learned directly from paired biopsy observations. Built on top of the [AgentTorch](https://agenttorch.github.io/AgentTorch/) simulation framework, TumorEnv introduces oncology-specific cell dynamics, image-to-simulation preprocessing, differentiable calibration objectives, and visualization tools for studying tumor evolution and immune response.
 
 Cancer progression and immune response emerge from millions of individual cellular decisions — proliferation, migration, combat, and death — unfolding across spatial tissue architectures. While traditional ABMs capture these dynamics, they lack differentiability, making calibration a black-box optimization problem. TumorEnv bridges this gap by making the entire simulation pipeline differentiable, allowing gradient-based calibration of model parameters directly from histopathology images.
 
@@ -47,6 +55,15 @@ Cancer progression and immune response emerge from millions of individual cellul
 </p>
 
 Each simulation step executes eight biologically motivated substeps, allowing tumor and immune populations to proliferate, migrate, interact, and evolve over time.
+
+## 📄 Technical Report
+
+The accompanying report describes the mathematical formulation, the differentiable calibration framework, the optimization algorithms, and the experimental evaluation of TumorEnv.
+
+**Read the report**
+
+- 📄 **Repository PDF:** [TumorEnv Technical Report](report/TumorEnv_final.pdf)
+- ☁️ **Mirror (Google Drive):** https://drive.google.com/file/d/1sG-oktAtHnYwM8RHNbDDzBO7Dz77L6XD/view?usp=sharing
 
 ## Pipeline
 
@@ -270,11 +287,12 @@ Thank you for your interest in contributing! You can contribute by:
 If you use TumorEnv in your research, please cite:
 
 ```bibtex
-@software{tumorenv,
-  author = {Ambastha, Pushkar},
-  title = {TumorEnv: Differentiable Agent-Based Modeling of Tumor-Immune Dynamics},
-  year = {2026},
-  url = {https://github.com/AgentTorch/TumorEnv}
+@misc{ambastha2026tumorenv,
+  title={Calibrating Immunological Agents},
+  author={Pushkar Ambastha},
+  year={2026},
+  note={Technical Report},
+  url={https://github.com/AgentTorch/TumorEnv}
 }
 ```
 
