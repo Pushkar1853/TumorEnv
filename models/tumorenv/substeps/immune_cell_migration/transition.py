@@ -47,33 +47,6 @@ class MigrateIMCell(SubstepTransition):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    # def plot_location_matrices(self, initial_matrix, updated_matrix):
-    #     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-
-    #     # Sum over all agents
-    #     initial_sum = (initial_matrix.sum(dim=0)>0).cpu().numpy()
-    #     updated_sum = (updated_matrix.sum(dim=0)>0).cpu().numpy()
-
-    #     # Plot initial matrix
-    #     im1 = ax1.imshow(initial_sum, cmap='coolwarm', interpolation='nearest')
-    #     ax1.set_title('Initial Location Matrix (Sum)')
-    #     plt.colorbar(im1, ax=ax1, label='Cell Count')
-
-    #     # Plot updated matrix
-    #     im2 = ax2.imshow(updated_sum, cmap='coolwarm', interpolation='nearest')
-    #     ax2.set_title('Updated Location Matrix (Sum)')
-    #     plt.colorbar(im2, ax=ax2, label='Cell Count')
-
-    #     # Set common labels
-    #     for ax in (ax1, ax2):
-    #         ax.set_xlabel('X')
-    #         ax.set_ylabel('Y')
-
-    #     plt.tight_layout()
-    #     plt.savefig('location_matrices.png')
-    #     plt.show()
-    #     plt.close()
-
     def forward(self, state, action):
         input_variables = self.input_variables
         location_matrix = get_by_path(state, re.split("/", input_variables["immune_location_matrix"]))
@@ -157,8 +130,6 @@ class MigrateIMCell(SubstepTransition):
         updated_IMintmax = torch.stack(updated_IMintmax).view(-1, grid_height, grid_width)
         updated_IMkmax = torch.stack(updated_IMkmax).view(-1, grid_height, grid_width)
         updated_engagementDuration = torch.stack(updated_engagementDuration).view(-1, grid_height, grid_width)
-
-        # self.plot_location_matrices(location_matrix, updated_location_matrix)
 
         # print("immune cell migration transition complete!")
         return {self.output_variables[0]: updated_location_matrix,
