@@ -58,32 +58,6 @@ class ProliferateTUCell(SubstepTransition):
     def __init__(self, config, input_variables, output_variables, arguments):
         super().__init__(config, input_variables, output_variables, arguments)
 
-    # def plot_location_matrices(self, initial_matrix, updated_matrix):
-    #     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-
-    #     # Sum over all agents
-    #     initial_sum = (initial_matrix.sum(dim=0)>0).cpu().numpy()
-    #     updated_sum = (updated_matrix.sum(dim=0)>0).cpu().numpy()
-
-    #     # Plot initial matrix
-    #     im1 = ax1.imshow(initial_sum, cmap='coolwarm', interpolation='nearest')
-    #     ax1.set_title('Initial Location Matrix (Sum)')
-    #     plt.colorbar(im1, ax=ax1, label='Cell Count')
-
-    #     # Plot updated matrix
-    #     im2 = ax2.imshow(updated_sum, cmap='coolwarm', interpolation='nearest')
-    #     ax2.set_title('Updated Location Matrix (Sum)')
-    #     plt.colorbar(im2, ax=ax2, label='Cell Count')
-
-    #     # Set common labels
-    #     for ax in (ax1, ax2):
-    #         ax.set_xlabel('X')
-    #         ax.set_ylabel('Y')
-
-    #     plt.tight_layout()
-    #     plt.savefig('location_matrices.png')
-    #     plt.show()
-
     def forward(self, state, action):
         location_matrix = get_by_path(state, re.split("/", self.input_variables["location_matrix"]))
         TUprolmax = get_by_path(state, re.split("/", self.input_variables["TUprolmax"]))
@@ -99,7 +73,7 @@ class ProliferateTUCell(SubstepTransition):
 
         num_agents, grid_height, grid_width = location_matrix.shape
 
-        # CHANGED: work on clones and mutate directly, rather than rebuilding every
+        # work on clones and mutate directly, rather than rebuilding every
         # agent's tensor via a per-agent helper — we need cross-agent bookkeeping
         # (which dead slots are still free) that a purely per-agent loop can't do.
         updated_location_matrix = location_matrix.clone()
@@ -108,17 +82,17 @@ class ProliferateTUCell(SubstepTransition):
         updated_Tum_proliferation_status = Tum_proliferation_status.clone()
         updated_Tum_engagement_status = Tum_engagement_status.clone()
 
-        # CHANGED: a "dead" slot = an agent index with no live cell. These are the
+        # a "dead" slot = an agent index with no live cell. These are the
         # only valid homes for a newly proliferated daughter cell.
         dead_slot_mask = (location_matrix.sum(dim=(1, 2)) == 0)
         dead_slot_indices = torch.where(dead_slot_mask)[0].tolist()
         dead_slot_ptr = 0
 
-        # CHANGED: cells already occupied by ANY live agent this step, so two
+        # cells already occupied by ANY live agent this step, so two
         # daughters (or a daughter and an unrelated cell) can't land on the same pixel.
         claimed_map = (location_matrix.sum(dim=0) > 0).float()
 
-        # CHANGED: differentiable shadow accumulator — track which parents actually fired
+        # differentiable shadow accumulator — track which parents actually fired
         fired_mask = torch.zeros(num_agents)
 
         for agent_idx in range(num_agents):
@@ -132,7 +106,7 @@ class ProliferateTUCell(SubstepTransition):
             if len(old_x) == 0:
                 continue
 
-            # CHANGED: only look for a DAUGHTER site distinct from the parent's own
+            # only look for a DAUGHTER site distinct from the parent's own
             # cell, and exclude anything already claimed by another agent this step
             candidate_probs = probs.clone()
             candidate_probs[old_y, old_x] = 0
@@ -152,7 +126,7 @@ class ProliferateTUCell(SubstepTransition):
             daughter_idx = dead_slot_indices[dead_slot_ptr]
             dead_slot_ptr += 1
 
-            # CHANGED: daughter is written into its OWN agent slot — parent's slot
+            # daughter is written into its OWN agent slot — parent's slot
             # (agent_idx) is left completely untouched, preserving one-cell-per-agent.
             updated_location_matrix[daughter_idx] = torch.zeros(grid_height, grid_width)
             updated_location_matrix[daughter_idx][new_y, new_x] = 1
@@ -167,13 +141,11 @@ class ProliferateTUCell(SubstepTransition):
             fired_mask[agent_idx] = 1.0
             claimed_map[new_y, new_x] = 1
 
-        # CHANGED: differentiable delta — fired_mask is a constant (built from hard
+        # differentiable delta — fired_mask is a constant (built from hard
         # torch.where/multinomial decisions, detached implicitly), event_weight
         # carries the theta-dependence via Gumbel-softmax. Gradient flows here.
         step_delta = (fired_mask.detach() * event_weight).sum()
         updated_soft_tumor_delta = soft_tumor_delta + step_delta
-
-        # self.plot_location_matrices(location_matrix, updated_location_matrix)
 
         # print("tumor cell proliferation transition complete! (%d new cells)" % dead_slot_ptr)
         return {self.output_variables[0]: updated_location_matrix,
