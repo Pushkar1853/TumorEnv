@@ -45,14 +45,13 @@ class InfluxIMCell(SubstepTransition):
         updated_CD8_non_proliferation_status = torch.where(newly_influxed, influx_targets, CD8_non_proliferation_status)
         updated_CD8_engagement_status = torch.where(newly_influxed, torch.zeros_like(CD8_engagement_status), CD8_engagement_status)
 
-        # CHANGED: closed-form expected contribution — differentiable in IMinfluxProb directly
+        # closed-form expected contribution — differentiable in IMinfluxProb directly
         # dead_mask computed from state: agent slots with no live cell
         dead_mask = (immune_location_matrix.sum(dim=(1, 2)) == 0)
         num_dead_slots = dead_mask.sum().float()
         step_delta = num_dead_slots.detach() * IMinfluxProb
         updated_soft_immune_delta = soft_immune_delta + step_delta
 
-        # print("immune cell influx transition complete! (%d new cells entered)" % int(newly_influxed.sum().item()))
         return {self.output_variables[0]: updated_location_matrix,
                 self.output_variables[1]: updated_IMprolmax,
                 self.output_variables[2]: updated_IMkmax,
