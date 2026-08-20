@@ -43,32 +43,6 @@ class MigrateTUCell(SubstepTransition):
             dict: the output state
 
     """
-    # def plot_location_matrices(self, initial_matrix, updated_matrix):
-    #     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-
-    #     # Sum over all agents
-    #     initial_sum = (initial_matrix.sum(dim=0)>0).cpu().numpy()
-    #     updated_sum = (updated_matrix.sum(dim=0)>0).cpu().numpy()
-
-    #     # Plot initial matrix
-    #     im1 = ax1.imshow(initial_sum, cmap='coolwarm', interpolation='nearest')
-    #     ax1.set_title('Initial Location Matrix (Sum)')
-    #     plt.colorbar(im1, ax=ax1, label='Cell Count')
-
-    #     # Plot updated matrix
-    #     im2 = ax2.imshow(updated_sum, cmap='coolwarm', interpolation='nearest')
-    #     ax2.set_title('Updated Location Matrix (Sum)')
-    #     plt.colorbar(im2, ax=ax2, label='Cell Count')
-
-    #     # Set common labels
-    #     for ax in (ax1, ax2):
-    #         ax.set_xlabel('X')
-    #         ax.set_ylabel('Y')
-
-    #     plt.tight_layout()
-    #     plt.savefig('location_matrices.png')
-    #     plt.show()
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     def forward(self, state, action):
@@ -84,13 +58,13 @@ class MigrateTUCell(SubstepTransition):
         def migrate_cell(matrix, migrate_action_probs):
             old_y, old_x = torch.where(matrix == 1)
             if len(old_x) > 1:
-                # CHANGED: defensive guard — an agent should never own >1 live cell;
+                # defensive guard — an agent should never own >1 live cell;
                 # if it does (upstream bug), just take the first and log it loudly
                 # instead of crashing on .item().
                 print(f"[WARNING] agent has {len(old_x)} live cells, expected 1 — using first")
                 old_y, old_x = old_y[:1], old_x[:1]
             if len(old_x) == 0:
-                # CHANGED: dead cell (already removed) — nothing to migrate, stay all-zero
+                # dead cell (already removed) — nothing to migrate, stay all-zero
                 zeros = torch.zeros_like(matrix)
                 return zeros, zeros, zeros
             new_y, new_x = torch.where(migrate_action_probs > 0.5)
@@ -103,13 +77,6 @@ class MigrateTUCell(SubstepTransition):
                 new_y, new_x = torch.where(matrix == 1)   # CHANGED: match (y, x) order used elsewhere
             transition_matrix = torch.zeros(migrate_action_probs.shape)
             transition_matrix[new_y, new_x] = 1
-            # if len(old_x) > 1:
-            #     #randomly sample one location to migrate using multinomial distribution
-            #     old_coords = torch.stack((old_y, old_x), dim=-1)
-            #     old_softmax_probs = F.softmax(migrate_action_probs[old_y, old_x], dim=0)
-            #     old_coord_idx = old_softmax_probs.multinomial(1, False)
-            #     old_tu_y, old_tu_x = old_coords[old_coord_idx, 0], old_coords[old_coord_idx, 1]
-            #     transition_matrix[old_tu_x, old_tu_y] = 1
             new_matrix = transition_matrix     # original matrix is not modified
             new_Tu_prolmax = transition_matrix * TUMOR_PROLIFERATION_CAPACITY
             new_Tu_intmax = transition_matrix * TUMOR_INTERACTION_CAPACITY
@@ -137,9 +104,6 @@ class MigrateTUCell(SubstepTransition):
         updated_TUintmax = updated_TUintmax.view(-1, grid_height, grid_width)
         updated_TUprolmax = updated_TUprolmax.view(-1, grid_height, grid_width)
 
-        # self.plot_location_matrices(location_matrix, updated_location_matrix)
-
-        # print("tumor cell migration transition complete!")
         return {self.output_variables[0]: updated_location_matrix,
                 self.output_variables[1]: updated_TUintmax,
                 self.output_variables[2]: updated_TUprolmax}
