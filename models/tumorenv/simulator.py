@@ -71,48 +71,6 @@ def TUIM_registry():
     reg.register(initialize_combined_cell_matrix, 'initialize_combined_cell_matrix', key='initialization')
 
     return reg
-
-# def get_runner(config, registry):
-#     TU_IM_Runner = Runner(config, registry)
-
-#     return TU_IM_Runner
-
-# class TU_IM_Runner(Runner):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.initial_state = None
-#         self.final_state = None
-
-#     def forward(self):
-#         for episode in range(self.config['simulation_metadata']['num_episodes']):
-#             num_steps_per_episode = self.config["simulation_metadata"]["num_steps_per_episode"]
-#             self.reset()
-#             self.initial_state = self.get_current_state()
-#             self.step(num_steps_per_episode)
-#             self.final_state = self.get_current_state()
-#             torch.cuda.empty_cache() # clear the cache
-#             gc.collect() # collect the garbage
-
-#     def execute(self):
-#         self.forward()
-
-#     def get_current_state(self):
-#         # convert these 3d matrices to 2d matrices as an image of 100x100 pixels, and mark the values
-#         # of the 3d matrices on the image locations
-#         tumor_matrix = self.state['agents']['tumorcells']['TU_location_matrix'] # shape (num_tumor_cells, 100, 100)
-#         immune_matrix = self.state['agents']['immunecells']['IM_location_matrix'] # shape (num_immune_cells, 100, 100)
-#         tumor_2d = torch.sum(tumor_matrix, dim=0)
-#         immune_2d = torch.sum(immune_matrix, dim=0)
-#         combined_image = torch.zeros_like(tumor_2d)
-#         combined_image[tumor_2d > 0] = 1
-#         combined_image[immune_2d > 0] = 2
-#         return combined_image
-    
-#     def get_initial_state(self):
-#         return self.initial_state
-    
-#     def get_final_state(self):
-#         return self.final_state
     
 class TU_IM_Runner(Runner):
     def __init__(self, *args, **kwargs):
