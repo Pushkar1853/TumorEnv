@@ -48,33 +48,6 @@ class ProliferateIMCell(SubstepTransition):
             state (dict): The updated state
 
     """
-    # def plot_location_matrices(self, initial_matrix, updated_matrix):
-    #     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-
-    #     # Sum over all agents
-    #     initial_sum = (initial_matrix.sum(dim=0)>0).cpu().numpy()
-    #     updated_sum = (updated_matrix.sum(dim=0)>0).cpu().numpy()
-
-    #     # Plot initial matrix
-    #     im1 = ax1.imshow(initial_sum, cmap='coolwarm', interpolation='nearest')
-    #     ax1.set_title('Initial Location Matrix (Sum)')
-    #     plt.colorbar(im1, ax=ax1, label='Cell Count')
-
-    #     # Plot updated matrix
-    #     im2 = ax2.imshow(updated_sum, cmap='coolwarm', interpolation='nearest')
-    #     ax2.set_title('Updated Location Matrix (Sum)')
-    #     plt.colorbar(im2, ax=ax2, label='Cell Count')
-
-    #     # Set common labels
-    #     for ax in (ax1, ax2):
-    #         ax.set_xlabel('X')
-    #         ax.set_ylabel('Y')
-
-    #     plt.tight_layout()
-    #     plt.savefig('location_matrices.png')
-    #     plt.show()
-    #     plt.close()
-
     def __init__(self, config, input_variables, output_variables, arguments):
         super().__init__(config, input_variables, output_variables, arguments)
 
@@ -155,9 +128,6 @@ class ProliferateIMCell(SubstepTransition):
         step_delta = (fired_mask.detach() * event_weight).sum()
         updated_soft_immune_delta = soft_immune_delta + step_delta
 
-        # self.plot_location_matrices(location_matrix, updated_location_matrix)
-
-        # print("immune cell proliferation transition complete! (%d new cells)" % dead_slot_ptr)
         return {self.output_variables[0]: updated_location_matrix,
                 self.output_variables[1]: updated_IMprolmax,
                 self.output_variables[2]: updated_CD8_proliferation_status,
