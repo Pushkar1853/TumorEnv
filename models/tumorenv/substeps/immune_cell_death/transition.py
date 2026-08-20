@@ -44,32 +44,6 @@ class KillIMCell(SubstepTransition):
             The updated location matrix of the immune cells
 
     """
-    # def plot_location_matrices(self, initial_matrix, updated_matrix):
-    #     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-
-    #     # Sum over all agents
-    #     initial_sum = (initial_matrix.sum(dim=0)>0).cpu().numpy()
-    #     updated_sum = (updated_matrix.sum(dim=0)>0).cpu().numpy()
-
-    #     # Plot initial matrix
-    #     im1 = ax1.imshow(initial_sum, cmap='coolwarm', interpolation='nearest')
-    #     ax1.set_title('Initial Location Matrix (Sum)')
-    #     plt.colorbar(im1, ax=ax1, label='Cell Count')
-
-    #     # Plot updated matrix
-    #     im2 = ax2.imshow(updated_sum, cmap='coolwarm', interpolation='nearest')
-    #     ax2.set_title('Updated Location Matrix (Sum)')
-    #     plt.colorbar(im2, ax=ax2, label='Cell Count')
-
-    #     # Set common labels
-    #     for ax in (ax1, ax2):
-    #         ax.set_xlabel('X')
-    #         ax.set_ylabel('Y')
-
-    #     plt.tight_layout()
-    #     plt.savefig('location_matrices.png')
-    #     plt.show()
-
     def __init__(self, config, input_variables, output_variables, arguments):
         super().__init__(config, input_variables, output_variables, arguments)
     
@@ -128,10 +102,7 @@ class KillIMCell(SubstepTransition):
             survives = (~dies).float()
 
             transition_matrix = agent_matrix * survives
-
             new_matrix = transition_matrix
-            # CHANGED: preserve existing capacity for survivors instead of resetting
-            # to a constant, so combat damage carries over between steps
             new_IM_kmax = IMkmax * survives
             new_IM_prolmax = IMprolmax * survives
             new_CD8_prol_status = torch.zeros(transition_matrix.shape)
@@ -182,10 +153,6 @@ class KillIMCell(SubstepTransition):
         died_mask = (updated_location_matrix.sum(dim=(1, 2)) == 0) & (location_matrix.sum(dim=(1, 2)) > 0)
         step_delta = -(died_mask.float().detach() * death_weights).sum()
         updated_soft_immune_delta = soft_immune_delta + step_delta
-
-        # self.plot_location_matrices(location_matrix, updated_location_matrix)
-
-        # print("immune cell death transition complete!") 
         return {self.output_variables[0]: updated_location_matrix,
                 self.output_variables[1]: updated_IMkmax,
                 self.output_variables[2]: updated_IMprolmax,
