@@ -40,32 +40,6 @@ class KillTUCell(SubstepTransition):
             updated location matrix : the updated location matrix of the tumor cells
             
     """
-    # def plot_location_matrices(self, initial_matrix, updated_matrix):
-    #     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-
-    #     # Sum over all agents
-    #     initial_sum = (initial_matrix.sum(dim=0)>0).cpu().numpy()
-    #     updated_sum = (updated_matrix.sum(dim=0)>0).cpu().numpy()
-
-    #     # Plot initial matrix
-    #     im1 = ax1.imshow(initial_sum, cmap='coolwarm', interpolation='nearest')
-    #     ax1.set_title('Initial Location Matrix (Sum)')
-    #     plt.colorbar(im1, ax=ax1, label='Cell Count')
-
-    #     # Plot updated matrix
-    #     im2 = ax2.imshow(updated_sum, cmap='coolwarm', interpolation='nearest')
-    #     ax2.set_title('Updated Location Matrix (Sum)')
-    #     plt.colorbar(im2, ax=ax2, label='Cell Count')
-
-    #     # Set common labels
-    #     for ax in (ax1, ax2):
-    #         ax.set_xlabel('X')
-    #         ax.set_ylabel('Y')
-
-    #     plt.tight_layout()
-    #     plt.savefig('location_matrices.png')
-    #     plt.show()
-
     def __init__(self, config, input_variables, output_variables, arguments):
         super().__init__(config, input_variables, output_variables, arguments)
 
@@ -86,10 +60,7 @@ class KillTUCell(SubstepTransition):
         soft_tumor_delta = get_by_path(state, re.split("/", input_variables["soft_tumor_delta"]))
         TUMOR_INTERACTION_CAPACITY = 2
         TUMOR_PROLIFERATION_CAPACITY = 10
-
-        # print(location_matrix.shape)
         num_agents, grid_height, grid_width = location_matrix.shape
-        # ipdb.set_trace()
 
         def kill_cell(agent_matrix, TUintmax, TUprolmax):
             """
@@ -110,7 +81,7 @@ class KillTUCell(SubstepTransition):
             death_weight = gumbel_softmax_sample[1]  # 1.0 if "death" was the sampled nature this step
 
             capacity_exhausted = torch.logical_or(TUintmax.squeeze() <= 0, TUprolmax.squeeze() <= 0).squeeze()
-            # CHANGED: dies now also fires when the stochastic nature draw is "death",
+            # dies now also fires when the stochastic nature draw is "death",
             # not only when capacity happens to hit zero. Previously death_weight was
             # computed and discarded, so TUpdeath had no effect on the simulation.
             dies = torch.logical_or(capacity_exhausted, death_weight.bool())
@@ -118,7 +89,7 @@ class KillTUCell(SubstepTransition):
             survives = (~dies).float()
             transition_matrix = agent_matrix * survives
             new_matrix = transition_matrix
-            # CHANGED: preserve each surviving cell's existing capacity instead of
+            # preserve each surviving cell's existing capacity instead of
             # resetting it to a constant every step (which erased accumulated combat damage)
             new_TU_intmax = TUintmax * survives
             new_TU_prolmax = TUprolmax * survives
@@ -163,8 +134,6 @@ class KillTUCell(SubstepTransition):
         died_mask = (updated_agent_matrix.sum(dim=(1, 2)) == 0) & (location_matrix.sum(dim=(1, 2)) > 0)
         step_delta = -(died_mask.float().detach() * death_weights).sum()
         updated_soft_tumor_delta = soft_tumor_delta + step_delta
-
-        # self.plot_location_matrices(location_matrix, updated_agent_matrix)
 
         # print("tumor cell death transition complete!")
         return {self.output_variables[0]: updated_agent_matrix,
